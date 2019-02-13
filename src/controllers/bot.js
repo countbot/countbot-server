@@ -80,7 +80,7 @@ function parse(text) {
         // res.status(500).send(error.message);
       });
   } else if (text && messageRegex[2].test(text)) {
-    postMessage(countBotId, 'https://github.com/doberste8/countbot#countbot');
+    postMessage(countBotId, 'https://github.com/countbot/countbot-server#countbot');
   }
 }
 

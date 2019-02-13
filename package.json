@@ -7,7 +7,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "startDev": "nodemon --exec 'npm run lint && node -r dotenv/config -r babel-register src/index.js dotenv_config_path=.env'",
     "lint": "./node_modules/.bin/eslint \"src/**/*.js\"",
-    "start": "node -r dotenv/config -r babel-register src/index.js",
+    "start": "node -r babel-register src/index.js",
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/countbot/countbot-server.git"
   },
   "author": "Stephan Dober",
   "license": "MIT",
