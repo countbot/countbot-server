@@ -1,0 +1,33 @@
+type Group {
+  id: String!
+  name: String!
+  description: String
+  msgCount: Int @cypher( statement: "MATCH (this)<-[:POSTED_IN]-(m:Message) RETURN count(m)" )
+  imageUrl: String
+  members: [User] @relation(name: "MEMBER_OF", direction: "IN")
+  posts: [Message] @relation(name: "POSTED_IN", direction: "IN")
+}
+
+type User {
+  id: String!
+  name: String
+  groups: [Group] @relation(name: "MEMBER_OF", direction: "OUT")
+  posts: [Message] @relation(name: "POSTED", direction: "OUT")
+  liked: [Message] @relation(name: "LIKED", direction: "OUT")
+  count: Int @cypher( statement: "MATCH (this)-[:POSTED]->(m:Message) RETURN count(m)" )
+}
+  
+type Message {
+  id: String!
+  posted_by: User! @relation(name: "POSTED", direction: "IN")
+  group: Group! @relation(name: "POSTED_IN", direction: "OUT")
+  text: String
+  timestamp: DateTime
+  liked_by: [User] @relation(name: "LIKED", direction: "IN")
+}
+
+type Query {
+  Group(id: String, name: String): [Group]
+  User(id: String, name: String): [User]
+  Message(id: String): [Message]
+}
