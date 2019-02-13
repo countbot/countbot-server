@@ -1,13 +1,14 @@
 {
   "name": "countbot-server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "API app for countbot",
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "startDev": "nodemon --exec 'npm run lint && node -r dotenv/config -r babel-register src/index.js dotenv_config_path=.env'",
+    "start": "nodemon --exec 'npm run lint && node -r dotenv/config -r babel-register src/index.js dotenv_config_path=.env'",
     "lint": "./node_modules/.bin/eslint \"src/**/*.js\"",
-    "start": "node -r babel-register src/index.js"
+    "build": "rm -rf build/* && babel -d ./build ./src --copy-files",
+    "startProd": "node ./build/index.js"
   },
   "repository": {
     "type": "git",
