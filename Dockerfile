@@ -13,7 +13,7 @@ RUN mkdir -p /app
 WORKDIR /app
 COPY package*.json ./
 RUN npm install --only=production
-COPY --from=build-stage /app/build ./
+COPY --from=build-stage /app/build ./build
 EXPOSE 4000
 
 CMD ["npm", "run", "startProd"]
