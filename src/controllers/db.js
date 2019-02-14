@@ -1,6 +1,6 @@
 // api/src/controllers/db.js
 
-// import axios from 'axios';
+import axios from 'axios';
 import logger from '../config/logger';
 import driver from '../config/neo4j-driver';
 import config from '../config';
@@ -9,8 +9,11 @@ const {
   gm: {
     token,
     groupId,
+    countBotId,
   },
 } = config;
+
+const gmApi = axios.create({ baseURL: 'https://api.groupme.com' });
 
 async function runCypher(arr, dr) {
   const session = dr.session();
@@ -136,6 +139,16 @@ exports.refresh = async (req, res) => {
       {}) YIELD updates, executions, runtime, batches, failedBatches, batchErrors, failedCommits, commitErrors`,
   ];
   const result = await runCypher(refreshCypher, driver);
+  gmApi.post('/v3/bots/post', {
+    bot_id: countBotId,
+    text: 'Database counts updated.',
+  })
+    // .then((result) => {
+    //   logger.info(`Message posted: ${msg}`);
+    // })
+    .catch((error) => {
+      logger.error(error.message);
+    });
   logger.info(result.map(x => x.records));
   res.send(result.map(x => x.records));
 };
