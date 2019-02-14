@@ -19,6 +19,7 @@ const instance = axios.create({ baseURL: apiUrl });
 const gmApi = axios.create({ baseURL: 'https://api.groupme.com' });
 
 function postMessage(botId, msg) {
+  logger.info(`message: ${botId}, ${msg}`);
   return gmApi.post('/v3/bots/post', {
     bot_id: botId,
     text: msg,

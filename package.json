@@ -1,6 +1,6 @@
 {
   "name": "countbot-server",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "API app for countbot",
   "main": "src/index.js",
   "scripts": {
@@ -17,6 +17,7 @@
   "author": "Stephan Dober",
   "license": "MIT",
   "dependencies": {
+    "@babel/runtime": "^7.3.1",
     "apollo-boost": "^0.1.23",
     "apollo-cache-inmemory": "^1.3.12",
     "apollo-client": "^2.4.8",
