@@ -137,7 +137,7 @@ function celebrate(senderId) {
       } = result.data[0];
 
       // logger.info(`UserCelebCount: ${msgCount}`);
-      if ((msgCount) % 10000 === 0 || /^(?=\d{4,})(\d)\1*$/.test(msgCount)) {
+      if ((msgCount) % 1000 === 0 || /^(?=\d{4,})(\d)\1*$/.test(msgCount)) {
         gmApi.post('/v3/bots/post', {
           bot_id: countessBotId,
           text: indGifs[Math.floor(Math.random() * indGifs.length)],
