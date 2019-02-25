@@ -49,6 +49,7 @@ exports.setup = async (req, res) => {
 
 exports.refresh = async (req, res) => {
   const duration = req.query.depth ? req.query.depth : 'P1W';
+  const postMsg = req.query.postMsg ? req.query.postMsg : 1;
   const refreshCypher = [
     `MERGE (import:Import {id:1})
       SET import.page = 1,
@@ -139,7 +140,8 @@ exports.refresh = async (req, res) => {
       {}) YIELD updates, executions, runtime, batches, failedBatches, batchErrors, failedCommits, commitErrors`,
   ];
   const result = await runCypher(refreshCypher, driver);
-  gmApi.post('/v3/bots/post', {
+  if (postMsg) {
+    gmApi.post('/v3/bots/post', {
     bot_id: countBotId,
     text: 'Database counts updated.',
   })
@@ -149,6 +151,7 @@ exports.refresh = async (req, res) => {
     .catch((error) => {
       logger.error(error.message);
     });
+  }
   logger.info(result.map(x => x.records));
   res.send(result.map(x => x.records));
 };
