@@ -49,7 +49,7 @@ exports.setup = async (req, res) => {
 
 exports.refresh = async (req, res) => {
   const duration = req.query.depth ? req.query.depth : 'P1W';
-  const postMsg = req.query.postMsg ? req.query.postMsg : 1;
+  const postMsg = req.query.postMsg ? parseInt(req.query.postMsg, 10) : 1;
   const refreshCypher = [
     `MERGE (import:Import {id:1})
       SET import.page = 1,
@@ -142,15 +142,15 @@ exports.refresh = async (req, res) => {
   const result = await runCypher(refreshCypher, driver);
   if (postMsg) {
     gmApi.post('/v3/bots/post', {
-    bot_id: countBotId,
-    text: 'Database counts updated.',
-  })
+      bot_id: countBotId,
+      text: 'Database counts updated.',
+    })
     // .then((result) => {
     //   logger.info(`Message posted: ${msg}`);
     // })
-    .catch((error) => {
-      logger.error(error.message);
-    });
+      .catch((error) => {
+        logger.error(error.message);
+      });
   }
   logger.info(result.map(x => x.records));
   res.send(result.map(x => x.records));
