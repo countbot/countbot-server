@@ -18,8 +18,10 @@ const gmApi = axios.create({ baseURL: 'https://api.groupme.com' });
 async function runCypher(arr, dr) {
   const session = dr.session();
   const resArray = [];
-  for (const query of arr) { /* eslint no-restricted-syntax: 1 */
-    await session.writeTransaction(tx => tx.run(query)) /* eslint no-await-in-loop: 1 */
+  // eslint-disable-next-line no-restricted-syntax
+  for (const query of arr) {
+    // eslint-disable-next-line no-await-in-loop
+    await session.writeTransaction(tx => tx.run(query))
       .then(result => resArray.push(result));
   }
   session.close();

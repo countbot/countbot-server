@@ -46,7 +46,7 @@ function parse(text) {
     const endDate = params[3];
     const queryText = params[4];
 
-    instance.get('/api/count', {
+    instance.get('/count', {
       params: {
         userName,
         startDate,
@@ -59,7 +59,8 @@ function parse(text) {
         if (result.data.length === 0) {
           postMessage(countBotId, 'Count Bot counts 0 messages matching those criteria.');
         } else {
-          for (const x of result.data) { /* eslint no-restricted-syntax: 1 */
+          // eslint-disable-next-line no-restricted-syntax
+          for (const x of result.data) {
             const u = x.User ? `${x.User} has posted ` : '';
             const m = `${x.Posts} messages`;
             const q = queryText ? ` containing "${queryText}"` : '';
@@ -71,7 +72,8 @@ function parse(text) {
             } else if (endDate) {
               d = ` before ${endDate}.`;
             }
-            await postMessage(countBotId, `${u}${m}${q}${d}`); /* eslint no-await-in-loop: 1 */
+            // eslint-disable-next-line no-await-in-loop
+            await postMessage(countBotId, `${u}${m}${q}${d}`);
           }
         }
       })
@@ -125,7 +127,7 @@ function celebrate(senderId) {
     });
 
   // Check for Individual Celebration
-  instance.get('/api/count', {
+  instance.get('/count', {
     params: {
       userId: senderId,
     },

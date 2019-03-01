@@ -14,8 +14,8 @@ router.use((req, res, next) => {
 
 // server routes ============================================================
 router.route('/bot').post(Bot.post);
-router.route('/api/setup').get(DB.setup);
-router.route('/api/refresh').get(DB.refresh);
-router.route('/api/count').get(DB.countQuery);
+router.route('/setup').get(DB.setup);
+router.route('/refresh').get(DB.refresh);
+router.route('/count').get(DB.countQuery);
 
 export default router;
