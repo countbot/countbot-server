@@ -29,6 +29,8 @@ const server = new ApolloServer({
     logger.error(error);
     return error;
   },
+  introspection: true,
+  playground: true,
   // formatResponse: (response) => {
   //   logger.info(JSON.stringify(response));
   //   return response;
