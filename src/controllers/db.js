@@ -9,7 +9,7 @@ const {
   gm: {
     token,
     groupId,
-    countBotId,
+    botId,
   },
 } = config;
 
@@ -37,11 +37,11 @@ exports.setup = async (req, res) => {
     'CREATE INDEX ON :User(name)',
     'CREATE CONSTRAINT ON (n:Message) ASSERT exists(n.id)',
     'CREATE CONSTRAINT ON (n:Message) ASSERT n.id IS UNIQUE',
+    'CREATE CONSTRAINT ON (n:Game) ASSERT exists(n.id)',
+    'CREATE CONSTRAINT ON (n:Game) ASSERT n.id IS UNIQUE',
     'MERGE (u:User {id:\'system\', name:\'GroupMe\'})',
     `MERGE (import:Import {id:1})
-      SET import.page = 1,
-      import.url = 'https://api.groupme.com/v3/groups?per_page=500&omit=memberships&page=' + import.page,
-      import.token = '${token}'`,
+      SET import.token = '${token}'`,
   ];
 
   const result = await runCypher(setupCypher, driver);
@@ -50,72 +50,47 @@ exports.setup = async (req, res) => {
 };
 
 exports.refresh = async (req, res) => {
-  const duration = req.query.depth ? req.query.depth : 'P1W';
-  const postMsg = req.query.postMsg ? parseInt(req.query.postMsg, 10) : 1;
+  const duration = req.query.depth ? req.query.depth : 'P10Y';
+  const postMsg = req.query.postMsg ? parseInt(req.query.postMsg, 10) : 0;
   const refreshCypher = [
-    `MERGE (import:Import {id:1})
-      SET import.page = 1,
-      import.url = 'https://api.groupme.com/v3/groups?per_page=500&omit=memberships&page=' + import.page,
-      import.gList = []`,
-    `CALL apoc.periodic.commit("MATCH (import:Import {id:1})
-      CALL apoc.load.jsonParams(import.url,{\`X-Access-Token\`:import.token}, null) YIELD value
-      SET import.page = import.page + 1,
-      import.url = 'https://api.groupme.com/v3/groups?per_page=500&omit=memberships&page=' + import.page,
-      import.gList = import.gList + EXTRACT(x in value.response | x.group_id)
-      WITH value
-      UNWIND value.response AS row
+    `MATCH (import:Import {id:1})
+      CALL apoc.load.jsonParams('https://api.groupme.com/v3/groups/${groupId}',{\`X-Access-Token\`:import.token}, null) YIELD value
+      WITH value.response AS row
         MERGE (g:Group {id:row.group_id})
         SET g.name = row.name,
           g.description = row.description,
           g.imageUrl = row.image_url
-        RETURN CASE
-          WHEN count(row) < 500 THEN 0
-          ELSE count(row)
-        END as count",
-      {}) YIELD updates, executions, runtime, batches, failedBatches, batchErrors, failedCommits, commitErrors`,
-    `MATCH (import:Import {id: 1})
-      SET import.url = 'https://api.groupme.com/v3/groups/'`,
-    `CALL apoc.periodic.iterate("MATCH (import:Import {id:1}) UNWIND import.gList as gI RETURN gI",
-      "MATCH (import:Import {id:1})
-      CALL apoc.load.jsonParams(import.url + gI,{\`X-Access-Token\`:import.token}, null) YIELD value
-      WITH value, gI as gId, import
-      UNWIND value.response.members AS row
-      MATCH (g:Group {id:gId})
-      MERGE (u:User {id:row.user_id})
+      WITH row
+      UNWIND row.members AS member
+      MERGE (u:User {id:member.user_id})
       MERGE (u)-[r:MEMBER_OF]->(g)
-      SET u.name = row.name,
-      r.nickname = row.nickname,
-      r.avatarUrl = row.image_url",
-      {batchSize:1, parallel:false, retries:2})`,
+      SET u.name = member.name,
+      r.nickname = member.nickname,
+      r.avatarUrl = member.image_url`,
     `MATCH (import:Import {id:1})
-      SET import.page = 0,
-        import.url = 'https://api.groupme.com/v3/groups/' + import.gList[import.page] + '/messages?limit=100',
+      SET import.url = 'https://api.groupme.com/v3/groups/${groupId}/messages?limit=100',
         import.count = 100,
         import.messageId = null`,
     `CALL apoc.periodic.commit("MATCH (import:Import {id:1})
-      WITH import, import.page AS page
       CALL apoc.load.jsonParams(import.url,{\`X-Access-Token\`:import.token}, null) YIELD value
-      SET import.page = CASE
-        WHEN size(value.response) = 0 THEN import.page + 1
-        WHEN datetime({ epochSeconds: COALESCE(last(value.response.messages).created_at, 9999999999) }) < datetime() - duration('${duration}') THEN import.page + 1
-        WHEN import.count >= value.response.count THEN import.page + 1
-        ELSE import.page
-      END,
-      import.messageId = CASE
+      SET import.messageId = CASE
         WHEN size(value.response) = 0 THEN null
-        WHEN datetime({ epochSeconds: COALESCE(last(value.response.messages).created_at, 9999999999) }) < datetime() - duration('${duration}') THEN null
         WHEN import.count >= value.response.count THEN null
         ELSE last(value.response.messages).id
       END,
-      import.url = 'https://api.groupme.com/v3/groups/' + import.gList[import.page] + '/messages?limit=100' + COALESCE('&before_id=' + import.messageId, ''),
+      import.url = 'https://api.groupme.com/v3/groups/${groupId}/messages?limit=100' + COALESCE('&before_id=' + import.messageId, ''),
       import.count = CASE
         WHEN size(value.response) = 0 THEN 100
-        WHEN datetime({ epochSeconds: COALESCE(last(value.response.messages).created_at, 9999999999) }) < datetime() - duration('${duration}') THEN 100
         WHEN import.count >= value.response.count THEN 100
         ELSE import.count + 100
+      END,
+      import.done = CASE
+        WHEN datetime({ epochSeconds: COALESCE(last(value.response.messages).created_at, 9999999999) }) < datetime() - duration('${duration}') THEN 0
+        WHEN import.count >= value.response.count THEN 0
+        ELSE 1
       END
-      WITH value.response.messages as messages, import.gList[page] as gId, import
-      MATCH (g:Group {id:gId})
+      WITH value.response.messages as messages, import
+      MATCH (g:Group {id:'${groupId}'})
       FOREACH (row in messages |
         MERGE (u:User {id:row.sender_id})
         ON CREATE SET u.name = row.name
@@ -135,16 +110,13 @@ exports.refresh = async (req, res) => {
           )
         )
       )
-      RETURN CASE
-        WHEN import.page >= size(import.gList) THEN 0
-        ELSE 1
-      END as count",
+      RETURN import.done",
       {}) YIELD updates, executions, runtime, batches, failedBatches, batchErrors, failedCommits, commitErrors`,
   ];
   const result = await runCypher(refreshCypher, driver);
   if (postMsg) {
     gmApi.post('/v3/bots/post', {
-      bot_id: countBotId,
+      bot_id: botId,
       text: 'Database counts updated.',
     })
     // .then((result) => {
@@ -158,60 +130,41 @@ exports.refresh = async (req, res) => {
   res.send(result.map(x => x.records));
 };
 
-exports.countQuery = (req, res) => {
-  const gId = req.query.groupId ? req.query.groupId : groupId;
-  const userId = req.query.userId ? req.query.userId : '.*';
-  const userName = req.query.userName ? req.query.userName : '';
-  const queryText = req.query.queryText ? req.query.queryText : '';
-  const startDate = req.query.startDate ? req.query.startDate : '2000';
-  const endDate = req.query.endDate ? req.query.endDate : '3000';
-  const Cypher = [
-    // Single User
-    `
-    MATCH (g:Group {id: '${gId}'})
-    MATCH (g)<-[:POSTED_IN]-(m:Message)<-[:POSTED]-(u:User)
-    WHERE m.text =~ '(?i).*${queryText}.*'
-    AND u.id =~ '${userId}'
-    AND u.name =~ '.*${userName}.*'
-    AND m.timestamp > datetime('${startDate}')
-    AND m.timestamp < datetime('${endDate}')
-    RETURN u.name as User, COUNT(m) as Posts ORDER BY Posts DESC
-    `,
-    // Group
-    `
-    MATCH (g:Group {id: '${gId}'})
-    MATCH (g)<-[:POSTED_IN]-(m:Message)
-    WHERE m.text =~ '(?i).*${queryText}.*'
-    AND m.timestamp > datetime('${startDate}')
-    AND m.timestamp < datetime('${endDate}')
-    RETURN COUNT(m) as Posts ORDER BY Posts DESC
-    `,
-    // All Users
-    `
-    MATCH (g:Group {id: '${gId}'})
-    MATCH (g)<-[:POSTED_IN]-(m:Message)<-[:POSTED]-(u:User)
-    WHERE m.text =~ '(?i).*${queryText}.*'
-    AND m.timestamp > datetime('${startDate}')
-    AND m.timestamp < datetime('${endDate}')
-    RETURN u.name as User, COUNT(m) as Posts ORDER BY Posts DESC
-    `,
+exports.roles = async (req, res) => {
+  const rolesCypher = [
+    `LOAD CSV WITH HEADERS FROM "https://docs.google.com/spreadsheets/d/1eCtw8w1EU18r-UEzb6nH9cn92zCTVAyW1XQDfpnZXv0/export?format=csv" AS row
+      FIELDTERMINATOR ','
+      MERGE (g:Game {id: row.Game})
+      SET g.theme = row.Theme,
+        g.startTime = datetime(row.Start),
+        g.endTime = datetime(row.End),
+        g.winner = row.Winner
+      WITH g,
+        split(row.Wolves, ";") AS wolves,
+        split(row.Seer, ";") AS seers,
+        split(row.Villagers, ";") AS villagers
+      UNWIND wolves AS w
+        MATCH (u:User {id:w})
+        MERGE (g)<-[p:PLAYED_IN]-(u)
+        SET p.role = ['Wolf']
+      WITH g, seers, villagers
+      UNWIND seers AS s
+        MATCH (u:User {id:s})
+        MERGE (g)<-[p:PLAYED_IN]-(u)
+        SET p.role = ['Seer', 'Villager']
+      WITH g, villagers
+      UNWIND villagers AS v
+        MATCH (u:User {id:v})
+        MERGE (g)<-[p:PLAYED_IN]-(u)
+        SET p.role = ['Villager']
+      WITH g
+      MATCH (:Group {id: '47203471'})<-[:POSTED_IN]-(m:Message)
+      WHERE m.timestamp > g.startTime
+      AND m.timestamp < g.endTime
+      MERGE (m)-[:PART_OF]->(g)`,
   ];
-  let c;
 
-  if (userName === '' && userId === '.*') {
-    [, c] = Cypher;
-  } else if (userName.toUpperCase() === 'ALL') {
-    [, , c] = Cypher;
-  } else {
-    [c] = Cypher;
-  }
-
-  const session = driver.session();
-  session.readTransaction(tx => tx.run(c))
-    .then((result) => {
-      session.close();
-      const records = result.records.map(r => r.toObject());
-      // logger.info(JSON.stringify(records));
-      res.send(records);
-    });
+  const result = await runCypher(rolesCypher, driver);
+  logger.info(result.map(x => x.records));
+  res.send(result.map(x => x.records));
 };

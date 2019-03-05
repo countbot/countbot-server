@@ -15,6 +15,7 @@ type User {
   posts: [Message] @relation(name: "POSTED", direction: "OUT")
   liked: [Message] @relation(name: "LIKED", direction: "OUT")
   count: Int @cypher( statement: "MATCH (this)-[:POSTED]->(m:Message) RETURN count(m)" )
+  games: [PLAYED_IN]
 }
   
 type Message {
@@ -24,10 +25,29 @@ type Message {
   text: String
   timestamp: DateTime
   liked_by: [User] @relation(name: "LIKED", direction: "IN")
+  role: [String] @cypher( statement: "MATCH (u:User)-[:POSTED]->(this)-[:PART_OF]->(g:Game) MATCH (u)-[p:PLAYED_IN]->(g) RETURN p.role" )
+  game: Game @relation(name: "PART_OF", direction: "OUT")
+}
+
+type Game {
+  id: String!
+  theme: String
+  winner: String
+  startTime: DateTime
+  endTime: DateTime
+  players: [PLAYED_IN]
+  posts: [Message] @relation(name: "PART_OF", direction: "IN")
+}
+
+type PLAYED_IN @relation(name: "PLAYED_IN") {
+  from: User
+  to: Game
+  role: [String]
 }
 
 type Query {
   Group(id: String, name: String): [Group]
   User(id: String, name: String): [User]
   Message(id: String): [Message]
+  Game(id: String, theme: String): [Game]
 }

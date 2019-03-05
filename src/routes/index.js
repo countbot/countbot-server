@@ -16,6 +16,6 @@ router.use((req, res, next) => {
 router.route('/bot').post(Bot.post);
 router.route('/setup').get(DB.setup);
 router.route('/refresh').get(DB.refresh);
-router.route('/count').get(DB.countQuery);
+router.route('/roles').get(DB.roles);
 
 export default router;

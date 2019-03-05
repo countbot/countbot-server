@@ -14,7 +14,6 @@ export default {
   gm: {
     token: process.env.TOKEN,
     groupId: process.env.GROUP_ID,
-    countBotId: process.env.COUNT_BOT_ID,
-    countessBotId: process.env.COUNTESS_BOT_ID,
+    botId: process.env.BOT_ID,
   },
 };
