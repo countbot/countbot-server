@@ -33,7 +33,7 @@ function parse(text) {
   ];
 
   if (text && messageRegex[0].test(text)) {
-    postMessage(botId, 'https://werewolves.xn--4i8hy2a.ws');
+    postMessage(botId, 'https://werewolves.🍞🔪.ws');
   }
 }
 
