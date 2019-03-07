@@ -214,6 +214,18 @@ exports.post = (req, res) => {
     .then((result) => {
       celebrate(senderId);
       parse(text);
+      const socketId = [];
+      const io = req.app.get('socketio');
+
+      io.on('connection', (socket) => {
+        socketId.push(socket.id);
+        if (socketId[0] === socket.id) {
+          // remove the connection listener for any subsequent
+          // connections with the same ID
+          io.removeAllListeners('connection');
+        }
+      });
+      io.emit('message', id);
       // logger.info(JSON.stringify(result.data));
       res.status(result.status).send(result.data);
     })
