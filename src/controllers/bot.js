@@ -30,10 +30,14 @@ function postMessage(bId, msg) {
 function parse(text) {
   const messageRegex = [
     /^!dashboard$/i,
+    /^!roles$/i,
   ];
 
   if (text && messageRegex[0].test(text)) {
     postMessage(botId, 'https://werewolves.🍞🔪.ws');
+  }
+  if (text && messageRegex[1].test(text)) {
+    postMessage(botId, 'https://docs.google.com/document/d/1-7rV6AaKfjeQM9LzRPL_1eg5m68ugRZuK3KGEuaae3o/edit?usp=sharing');
   }
 }
 
