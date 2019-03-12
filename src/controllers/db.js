@@ -148,10 +148,11 @@ exports.roles = async (req, res) => {
         MERGE (g)<-[p:PLAYED_IN]-(u)
         SET p.role = ['Wolf']
       WITH g, seers, villagers
-      UNWIND seers AS s
+      FOREACH(s IN seers |
         MATCH (u:User {id:s})
         MERGE (g)<-[p:PLAYED_IN]-(u)
         SET p.role = ['Seer', 'Villager']
+        )
       WITH g, villagers
       UNWIND villagers AS v
         MATCH (u:User {id:v})
