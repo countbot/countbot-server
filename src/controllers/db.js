@@ -149,7 +149,7 @@ exports.roles = async (req, res) => {
         SET p.role = ['Wolf']
       WITH g, seers, villagers
       FOREACH(s IN seers |
-        MATCH (u:User {id:s})
+        MERGE (u:User {id:s})
         MERGE (g)<-[p:PLAYED_IN]-(u)
         SET p.role = ['Seer', 'Villager']
         )
