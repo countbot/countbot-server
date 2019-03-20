@@ -34,7 +34,7 @@ function getNicknames(grId) {
 }
 
 async function postMessage(gId, targetId, res) {
-  const n = await getNicknames(groupId);
+  const n = await getNicknames(gId);
   console.log(targetId);
   return gmApi.post(`/v3/groups/${gId}/messages`, {
     message: {
@@ -105,7 +105,7 @@ exports.get = (req, res) => {
         return m.p.id === 'system' || m.p.id === '764066';
       });
       // logger.info(`target: ${targetId}`);
-      postMessage(30883038, targetId, res);
+      postMessage(groupId, targetId, res);
     })
     .catch((error) => {
       logger.error(error.message);
