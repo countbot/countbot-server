@@ -38,9 +38,8 @@ async function postMessage(gId, targetId, res) {
   console.log(targetId);
   return gmApi.post(`/v3/groups/${gId}/messages`, {
     message: {
-      text: `🤨
-      Guys, Wait!
-      I'm pretty sure it's gotta be @${n[targetId]}
+      text: `🤨... That's pretty sus.
+      Guys, I think it's gotta be @${n[targetId]}
       That's the only way this all makes sense`,
       attachments: [{
         type: 'mentions',
