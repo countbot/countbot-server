@@ -101,7 +101,7 @@ exports.get = (req, res) => {
       let targetId = null;
       msgs.every((m) => {
         targetId = m.p.id;
-        return m.p.id === 'system' || m.p.id === '764066';
+        return m.p.id === 'system';
       });
       // logger.info(`target: ${targetId}`);
       postMessage(groupId, targetId, res);
