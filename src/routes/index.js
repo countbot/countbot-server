@@ -3,6 +3,7 @@
 import express from 'express';
 import Bot from '../controllers/bot';
 import DB from '../controllers/db';
+import Troll from '../controllers/troll';
 // import api from './api';
 
 const router = express.Router();
@@ -17,5 +18,6 @@ router.route('/bot').post(Bot.post);
 router.route('/setup').get(DB.setup);
 router.route('/refresh').get(DB.refresh);
 router.route('/roles').get(DB.roles);
+router.route('/troll').get(Troll.get);
 
 export default router;
