@@ -160,54 +160,25 @@ exports.refresh = async (req, res) => {
 
 exports.countQuery = (req, res) => {
   const gId = req.query.groupId ? req.query.groupId : groupId;
-  const userId = req.query.userId ? req.query.userId : '.*';
-  const userName = req.query.userName ? req.query.userName : '';
-  const queryText = req.query.queryText ? req.query.queryText : '';
-  const startDate = req.query.startDate ? req.query.startDate : '2000';
-  const endDate = req.query.endDate ? req.query.endDate : '3000';
-  const Cypher = [
-    // Single User
-    `
+  const uName = req.query.userName ? req.query.userName : '';
+  const userId = req.query.userId ? `u.id =~ '${req.query.userId}'` : 'True';
+  const userName = (req.query.userName && uName.toUpperCase() !== 'ALL') ? `u.name =~ '.*${req.query.userName}.*'` : 'True';
+  const queryText = req.query.queryText ? `m.text =~ '(?i).*${req.query.queryText}.*'` : 'True';
+  const startDate = req.query.startDate ? `m.timestamp > datetime('${req.query.startDate}')` : 'True';
+  const endDate = req.query.endDate ? `m.timestamp < datetime('${req.query.endDate}')` : 'True';
+  const cypher = `
     MATCH (g:Group {id: '${gId}'})
     MATCH (g)<-[:POSTED_IN]-(m:Message)<-[:POSTED]-(u:User)
-    WHERE m.text =~ '(?i).*${queryText}.*'
-    AND u.id =~ '${userId}'
-    AND u.name =~ '.*${userName}.*'
-    AND m.timestamp > datetime('${startDate}')
-    AND m.timestamp < datetime('${endDate}')
-    RETURN u.name as User, COUNT(m) as Posts ORDER BY Posts DESC
-    `,
-    // Group
-    `
-    MATCH (g:Group {id: '${gId}'})
-    MATCH (g)<-[:POSTED_IN]-(m:Message)
-    WHERE m.text =~ '(?i).*${queryText}.*'
-    AND m.timestamp > datetime('${startDate}')
-    AND m.timestamp < datetime('${endDate}')
-    RETURN COUNT(m) as Posts ORDER BY Posts DESC
-    `,
-    // All Users
-    `
-    MATCH (g:Group {id: '${gId}'})
-    MATCH (g)<-[:POSTED_IN]-(m:Message)<-[:POSTED]-(u:User)
-    WHERE m.text =~ '(?i).*${queryText}.*'
-    AND m.timestamp > datetime('${startDate}')
-    AND m.timestamp < datetime('${endDate}')
-    RETURN u.name as User, COUNT(m) as Posts ORDER BY Posts DESC
-    `,
-  ];
-  let c;
-
-  if (userName === '' && userId === '.*') {
-    [, c] = Cypher;
-  } else if (userName.toUpperCase() === 'ALL') {
-    [, , c] = Cypher;
-  } else {
-    [c] = Cypher;
-  }
+    WHERE ${queryText}
+    AND ${userId}
+    AND ${userName}
+    AND ${startDate}
+    AND ${endDate}
+    RETURN ${(req.query.userId || req.query.userName) ? 'u.name as User, ' : ''}COUNT(m) as Posts ORDER BY Posts DESC
+    `;
 
   const session = driver.session();
-  session.readTransaction(tx => tx.run(c))
+  session.readTransaction(tx => tx.run(cypher))
     .then((result) => {
       session.close();
       const records = result.records.map(r => r.toObject());

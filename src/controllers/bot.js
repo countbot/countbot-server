@@ -9,7 +9,7 @@ import config from '../config';
 const {
   apiUrl,
   gm: {
-    groupId,
+    // groupId,
     countBotId,
     countessBotId,
   },
@@ -88,19 +88,10 @@ function parse(text) {
 
 function celebrate(senderId) {
   // Check for Group Celebration
-  instance.post('/graphql', {
-    query: `query ($groupId: String!){
-              Group(id: $groupId) {
-                msgCount
-              }
-            }`,
-    variables: {
-      groupId,
-    },
-  })
+  instance.post('/count')
     .then((result) => {
-      const { msgCount } = result.data.data.Group[0];
-      // logger.info(`GroupCelebCount: ${msgCount}`);
+      const { Posts: msgCount } = result.data[0];
+      logger.info(`GroupCelebCount: ${msgCount}`);
       if ((msgCount) % 10000 === 0 || /^(?=\d{4,})(\d)\1*$/.test(msgCount)) {
         gmApi.post('/v3/bots/post', {
           bot_id: countessBotId,
@@ -109,7 +100,7 @@ function celebrate(senderId) {
           .then(() => {
             gmApi.post('/v3/bots/post', {
               bot_id: countessBotId,
-              text: `Message ${msgCount + 1}! Party Time!!!!`,
+              text: `Message ${msgCount}! Party Time!!!!`,
             })
               .catch((error) => {
                 logger.error(error.message);
