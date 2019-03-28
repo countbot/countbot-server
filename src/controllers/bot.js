@@ -88,7 +88,7 @@ function parse(text) {
 
 function celebrate(senderId) {
   // Check for Group Celebration
-  instance.post('/count')
+  instance.get('/count')
     .then((result) => {
       const { Posts: msgCount } = result.data[0];
       logger.info(`GroupCelebCount: ${msgCount}`);
