@@ -9,7 +9,7 @@ import config from '../config';
 const {
   apiUrl,
   gm: {
-    groupId,
+    // groupId,
     countBotId,
     countessBotId,
   },
@@ -88,28 +88,19 @@ function parse(text) {
 
 function celebrate(senderId) {
   // Check for Group Celebration
-  instance.post('/graphql', {
-    query: `query ($groupId: String!){
-              Group(id: $groupId) {
-                msgCount
-              }
-            }`,
-    variables: {
-      groupId,
-    },
-  })
+  instance.get('/count')
     .then((result) => {
-      const { msgCount } = result.data.data.Group[0];
-      // logger.info(`GroupCelebCount: ${msgCount}`);
-      if ((msgCount) % 10000 === 0 || /^(?=\d{4,})(\d)\1*$/.test(msgCount)) {
+      const { Posts: msgCount } = result.data[0];
+      logger.info(`GroupCelebCount: ${msgCount}`);
+      if ((msgCount + 1) % 10000 === 0 || /^(?=\d{4,})(\d)\1*$/.test(msgCount)) {
         gmApi.post('/v3/bots/post', {
           bot_id: countessBotId,
-          text: groupGifs[Math.floor(Math.random() * groupGifs.length)],
+          text: `Message ${msgCount + 1}! Party Time!!!!`,
         })
           .then(() => {
             gmApi.post('/v3/bots/post', {
               bot_id: countessBotId,
-              text: `Message ${msgCount + 1}! Party Time!!!!`,
+              text: groupGifs[Math.floor(Math.random() * groupGifs.length)],
             })
               .catch((error) => {
                 logger.error(error.message);
@@ -142,12 +133,12 @@ function celebrate(senderId) {
       if ((msgCount) % 1000 === 0 || /^(?=\d{4,})(\d)\1*$/.test(msgCount)) {
         gmApi.post('/v3/bots/post', {
           bot_id: countessBotId,
-          text: indGifs[Math.floor(Math.random() * indGifs.length)],
+          text: `It's time to Celebrate! ${name} has reached ${msgCount} messages!!!!`,
         })
           .then(() => {
             gmApi.post('/v3/bots/post', {
               bot_id: countessBotId,
-              text: `It's time to Celebrate! ${name} has reached ${msgCount} messages!!!!`,
+              text: indGifs[Math.floor(Math.random() * indGifs.length)],
             });
           });
       }
