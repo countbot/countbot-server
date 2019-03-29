@@ -37,6 +37,7 @@ exports.setup = async (req, res) => {
     'CREATE INDEX ON :User(name)',
     'CREATE CONSTRAINT ON (n:Message) ASSERT exists(n.id)',
     'CREATE CONSTRAINT ON (n:Message) ASSERT n.id IS UNIQUE',
+    'CREATE INDEX ON :Message(timestamp)',
     'CREATE CONSTRAINT ON (n:Game) ASSERT exists(n.id)',
     'CREATE CONSTRAINT ON (n:Game) ASSERT n.id IS UNIQUE',
     'MERGE (u:User {id:\'system\', name:\'GroupMe\'})',
@@ -168,4 +169,71 @@ exports.roles = async (req, res) => {
   const result = await runCypher(rolesCypher, driver);
   logger.info(result.map(x => x.records));
   res.send(result.map(x => x.records));
+};
+
+exports.getMessages = (req, res) => {
+  const gId = req.query.groupId ? req.query.groupId : groupId;
+  const after = req.query.after ? `m.timestamp > datetime('${req.query.after}')` : 'True';
+
+  const cypher = `MATCH (group:Group {id: '${gId}'})<-[:POSTED_IN]-(m:Message)
+    WHERE ${after}
+    MATCH (m)<-[:POSTED]-(u:User)
+    OPTIONAL MATCH (g:Game)<-[:PART_OF]-(m)
+    OPTIONAL MATCH (g)<-[p:PLAYED_IN]-(u)
+    RETURN m.id as i, m.text as t, u.id as ui, u.name as un, m.timestamp as ti, p.role as r, g.theme as th
+    ORDER BY ti DESC;
+  `;
+
+  const session = driver.session();
+  let count = 0;
+  session.run(cypher)
+    .subscribe({
+      onNext: (record) => {
+        const r = record.toObject();
+        r.ti = r.ti.toString();
+        res.write(JSON.stringify(r));
+        count += 1;
+      },
+      onCompleted: (summary) => {
+        session.close();
+        res.end();
+        logger.info(`Fetched ${count} messages in ${summary.resultConsumedAfter} milliseconds.`);
+      },
+      onError: (error) => {
+        logger.error(error);
+        res.send(error);
+      },
+    });
+};
+
+exports.getMessage = (req, res) => {
+  const mId = req.query.id ? req.query.id : null;
+
+  const cypher = `MATCH (m:Message {id: '${mId}'})
+    MATCH (m)<-[:POSTED]-(u:User)
+    OPTIONAL MATCH (g:Game)<-[:PART_OF]-(m)
+    OPTIONAL MATCH (g)<-[p:PLAYED_IN]-(u)
+    RETURN m.id as i, m.text as t, u.id as ui, u.name as un, m.timestamp as ti, p.role as r, g.theme as th;
+  `;
+
+  const session = driver.session();
+  let count = 0;
+  session.run(cypher)
+    .subscribe({
+      onNext: (record) => {
+        const r = record.toObject();
+        r.ti = r.ti.toString();
+        res.write(JSON.stringify(r));
+        count += 1;
+      },
+      onCompleted: (summary) => {
+        session.close();
+        res.end();
+        logger.info(`Fetched ${count} messages in ${summary.resultConsumedAfter} milliseconds.`);
+      },
+      onError: (error) => {
+        logger.error(error);
+        res.send(error);
+      },
+    });
 };

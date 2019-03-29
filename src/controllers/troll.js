@@ -35,7 +35,7 @@ function getNicknames(grId) {
 
 async function postMessage(gId, targetId, res) {
   const n = await getNicknames(gId);
-  console.log(targetId);
+  // console.log(targetId);
   return gmApi.post(`/v3/groups/${gId}/messages`, {
     message: {
       text: `🤨... That's pretty sus.

@@ -18,6 +18,8 @@ router.route('/bot').post(Bot.post);
 router.route('/setup').get(DB.setup);
 router.route('/refresh').get(DB.refresh);
 router.route('/roles').get(DB.roles);
+router.route('/messages').get(DB.getMessages);
+router.route('/message').get(DB.getMessage);
 router.route('/troll').get(Troll.get);
 
 export default router;
