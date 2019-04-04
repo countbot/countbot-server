@@ -32,6 +32,7 @@ function parse(text) {
     /^!dashboard$/i,
     /^!roles$/i,
     /^!dobershrug$/i,
+    /dashbot/i,
   ];
 
   if (text && messageRegex[0].test(text)) {
@@ -42,6 +43,9 @@ function parse(text) {
   }
     if (text && messageRegex[2].test(text)) {
     postMessage(botId, '¯\\_(ツ)_/¯');
+  }
+  if (text && messageRegex[2].test(text)) {
+    postMessage(botId, 'Regards 🤠');
   }
 }
 
