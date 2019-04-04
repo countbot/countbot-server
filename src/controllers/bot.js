@@ -31,6 +31,7 @@ function parse(text) {
   const messageRegex = [
     /^!dashboard$/i,
     /^!roles$/i,
+    /^!dobershrug$/i,
   ];
 
   if (text && messageRegex[0].test(text)) {
@@ -38,6 +39,9 @@ function parse(text) {
   }
   if (text && messageRegex[1].test(text)) {
     postMessage(botId, 'https://docs.google.com/document/d/1-7rV6AaKfjeQM9LzRPL_1eg5m68ugRZuK3KGEuaae3o/edit?usp=sharing');
+  }
+    if (text && messageRegex[2].test(text)) {
+    postMessage(botId, '¯\\_(ツ)_/¯');
   }
 }
 
