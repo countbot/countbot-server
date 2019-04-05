@@ -32,7 +32,7 @@ function parse(text) {
     /^!dashboard$/i,
     /^!roles$/i,
     /^!dobershrug$/i,
-    /dashbot/i,
+    /dash/i,
   ];
 
   if (text && messageRegex[0].test(text)) {
