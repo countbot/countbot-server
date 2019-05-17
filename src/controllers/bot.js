@@ -41,10 +41,10 @@ function parse(text) {
   if (text && messageRegex[1].test(text)) {
     postMessage(botId, 'https://docs.google.com/document/d/1-7rV6AaKfjeQM9LzRPL_1eg5m68ugRZuK3KGEuaae3o/edit?usp=sharing');
   }
-    if (text && messageRegex[2].test(text)) {
+  if (text && messageRegex[2].test(text)) {
     postMessage(botId, '¯\\_(ツ)_/¯');
   }
-  if (text && messageRegex[3].test(text)) {
+  if (text && messageRegex[3].test(text) && Math.random() < .25) {
     postMessage(botId, 'Regards 🤠');
   }
 }
