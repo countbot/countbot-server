@@ -44,7 +44,7 @@ function parse(text) {
   if (text && messageRegex[2].test(text)) {
     postMessage(botId, '¯\\_(ツ)_/¯');
   }
-  if (text && messageRegex[3].test(text) && Math.random() < .25) {
+  if (text && messageRegex[3].test(text) && Math.random() < 0.25) {
     postMessage(botId, 'Regards 🤠');
   }
 }

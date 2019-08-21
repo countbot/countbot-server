@@ -2,3 +2,4 @@
 logs/
 .npmrc
 build/
+node_modules/

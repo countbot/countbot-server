@@ -192,6 +192,7 @@ exports.getMessages = (req, res) => {
         const r = record.toObject();
         r.ti = r.ti.toString();
         res.write(JSON.stringify(r));
+        res.write(',');
         count += 1;
       },
       onCompleted: (summary) => {
