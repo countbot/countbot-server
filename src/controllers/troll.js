@@ -1,11 +1,12 @@
 // api/src/controllers/troll.js
 
 import axios from 'axios';
+import { runHttpQuery, convertNodeHttpToRequest } from 'apollo-server-core';
+import server from '../config/apollo';
 import logger from '../config/logger';
 import config from '../config';
 
 const {
-  apiUrl,
   gm: {
     groupId,
     token,
@@ -13,7 +14,6 @@ const {
   },
 } = config;
 
-const instance = axios.create({ baseURL: apiUrl });
 const gmApi = axios.create({ baseURL: 'https://api.groupme.com', headers: { 'X-Access-Token': token } });
 
 function getNicknames(grId) {
@@ -25,7 +25,7 @@ function getNicknames(grId) {
       members.forEach((m) => {
         nicknames[m.user_id] = m.nickname;
       });
-      logger.info(JSON.stringify(nicknames));
+      // logger.info(JSON.stringify(nicknames));
       return nicknames;
     })
     .catch((error) => {
@@ -83,9 +83,14 @@ async function postMessage(gId, targetId, res) {
 }
 
 
-exports.get = (req, res) => {
-  instance.post('/graphql', {
-    query: `{
+exports.get = async (req, res) => {
+  const contextValue = await server.createGraphQLServerOptions(req, res);
+
+  runHttpQuery([req, res], {
+    method: 'POST',
+    options: contextValue,
+    query: {
+      query: `{
               msgs: Message(first: 10, orderBy: id_desc) {
                 id
                 p: posted_by {
@@ -94,9 +99,12 @@ exports.get = (req, res) => {
                 }
               }
             }`,
+    },
+    request: convertNodeHttpToRequest(req),
   })
     .then((result) => {
-      const { msgs } = result.data.data;
+      const { graphqlResponse } = result;
+      const { msgs } = JSON.parse(graphqlResponse).data;
       // console.info(msgs);
       let targetId = null;
       msgs.every((m) => {

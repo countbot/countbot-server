@@ -1,17 +1,17 @@
 // api/src/controllers/bot.js
 
 import axios from 'axios';
+import { runHttpQuery, convertNodeHttpToRequest } from 'apollo-server-core';
+import server from '../config/apollo';
 import logger from '../config/logger';
 import config from '../config';
 
 const {
-  apiUrl,
   gm: {
     botId,
   },
 } = config;
 
-const instance = axios.create({ baseURL: apiUrl });
 const gmApi = axios.create({ baseURL: 'https://api.groupme.com' });
 
 function postMessage(bId, msg) {
@@ -49,7 +49,7 @@ function parse(text) {
   }
 }
 
-exports.post = (req, res) => {
+exports.post = async (req, res) => {
   const data = Object.assign({}, req.body);
   const {
     id,
@@ -59,42 +59,48 @@ exports.post = (req, res) => {
     created_at: dateSeconds,
   } = data;
   const createdAt = new Date(dateSeconds * 1000).toISOString();
+  const contextValue = await server.createGraphQLServerOptions(req, res);
 
-  instance.post('/graphql', {
-    query: `mutation ($id: String!, $postGroupId: String!, $senderId: String!, $createdAt: String, $text: String) {
-        CreateMessage(id: $id, timestamp: { formatted: $createdAt }, text: $text) {
-          id
-          timestamp {
-            formatted
-          }
-          text
-        }
-        AddMessagePosted_by(from: {id: $senderId,}, to: {id: $id,}) {
-          from {
+  runHttpQuery([req, res], {
+    method: req.method,
+    options: contextValue,
+    query: {
+      query: `mutation ($id: String!, $postGroupId: String!, $senderId: String!, $createdAt: String, $text: String) {
+          CreateMessage(id: $id, timestamp: { formatted: $createdAt }, text: $text) {
             id
-            name
+            timestamp {
+              formatted
+            }
+            text
           }
-          to {
-            id
+          AddMessagePosted_by(from: {id: $senderId,}, to: {id: $id,}) {
+            from {
+              id
+              name
+            }
+            to {
+              id
+            }
           }
-        }
-        AddMessageGroup(from: {id: $id,}, to: {id: $postGroupId,}) {
-          from {
-            id
+          AddMessageGroup(from: {id: $id,}, to: {id: $postGroupId,}) {
+            from {
+              id
+            }
+            to {
+              id
+              name
+            }
           }
-          to {
-            id
-            name
-          }
-        }
-      }`,
-    variables: {
-      id,
-      postGroupId,
-      senderId,
-      createdAt,
-      text,
+        }`,
+      variables: {
+        id,
+        postGroupId,
+        senderId,
+        createdAt,
+        text,
+      },
     },
+    request: convertNodeHttpToRequest(req),
   })
     .then((result) => {
       parse(text);
@@ -111,7 +117,7 @@ exports.post = (req, res) => {
       });
       io.emit('message', id);
       // logger.info(JSON.stringify(result.data));
-      res.status(result.status).send(result.data);
+      res.status(200).send(result);
     })
     .catch((error) => {
       logger.error(error.message);

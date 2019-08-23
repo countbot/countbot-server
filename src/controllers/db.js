@@ -189,10 +189,10 @@ exports.getMessages = (req, res) => {
   session.run(cypher)
     .subscribe({
       onNext: (record) => {
+        if (count > 0) res.write(',');
         const r = record.toObject();
         r.ti = r.ti.toString();
         res.write(JSON.stringify(r));
-        res.write(',');
         count += 1;
       },
       onCompleted: (summary) => {

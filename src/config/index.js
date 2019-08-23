@@ -5,7 +5,6 @@ export default {
   app: {
     port: (process.env.API_PORT || 3000),
   },
-  apiUrl: process.env.API_URL,
   db: {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
